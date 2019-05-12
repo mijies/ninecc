@@ -52,7 +52,7 @@ Node *new_node_num(int val) {
 }
 
 int consume(int ty) {
-	if (tokens[pos].ty !=ty)
+	if (tokens[pos].ty != ty)
 		return 0;
 	pos++;
 	return 1;
@@ -87,7 +87,7 @@ Node *mul() {
 Node *term() {
 	if (consume('(')) {
 		Node *node = add();
-		if (consume(')'))
+		if (!consume(')'))
 			error("No close parenthese found: s", tokens[pos].input);
 		return node;
 	}
@@ -116,7 +116,8 @@ void tokenize(char *p) {
 
 
 		if (*p == '+' || *p == '-' ||
-			*p == '*' || *p == '/') {
+			*p == '*' || *p == '/' ||
+			*p == '(' || *p == ')') {
 			tokens[i].ty = *p;
 			tokens[i].input = p;
 			i++;
