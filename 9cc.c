@@ -2,11 +2,15 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-// #include <string.h>
+#include <string.h>
 
 enum {
 	TK_NUM = 256,	// Integer token
 	TK_EOF,
+	TK_EQ,
+	TK_NE,
+	TK_LE,
+	TK_GE,
 };
 
 typedef struct {
@@ -31,6 +35,9 @@ typedef struct Node_ {
 	int val;			// when ty is ND_NUM
 } Node;
 
+Node *expr();
+Node *equality();
+Node *relational();
 Node *add();
 Node *mul();
 Node *unary();
@@ -57,6 +64,33 @@ int consume(int ty) {
 		return 0;
 	pos++;
 	return 1;
+}
+
+Node *expr() {
+	Node *node = equality();
+
+
+}
+
+Node *equality() {
+	Node *node = relational();
+}
+
+Node *relational() {
+	Node *node = add();
+
+	for (;;) {
+		if (consume('<'))
+			node = new_node('<', node, add());
+		else if (consume(TK_LE))
+			node = new_node(TK_LE, node, add());
+		else if (consume('>'))
+			node = new_node('>', node, add());
+		else if (consume(TK_GE))
+			node = new_node(TK_GE, node, add());
+		else
+			return node;
+	}
 }
 
 Node *add() {
@@ -125,8 +159,26 @@ void tokenize(char *p) {
 			continue;
 		}
 
+		if (strncmp(p, "<=", 2)==0) {
+			tokens[i].ty = TK_LE;
+			tokens[i].input = "<=";
+			i++;
+			p++;
+			p++;
+			continue;
+		}
 
-		if (*p == '+' || *p == '-' ||
+		if (strncmp(p, ">=", 2)==0) {
+			tokens[i].ty = TK_GE;
+			tokens[i].input = ">=";
+			i++;
+			p++;
+			p++;
+			continue;
+		}
+
+		if (*p == '<' || *p == '>' ||
+		    *p == '+' || *p == '-' ||
 			*p == '*' || *p == '/' ||
 			*p == '(' || *p == ')') {
 			tokens[i].ty = *p;
@@ -135,7 +187,6 @@ void tokenize(char *p) {
 			p++;
 			continue;
 		}
-
 
 		if (isdigit(*p)) {
 			tokens[i].ty = TK_NUM;
@@ -166,6 +217,26 @@ void gen(Node *node) {
 	printf("  pop rax\n"); // Value is set by lhs
 
 	switch (node->ty) {
+	case '<':
+		printf("  cmp rax, rdi\n");
+		printf("  setl al\n");
+		printf("  movzb rax, al\n");
+		break;
+	case TK_LE:
+		printf("  cmp rax, rdi\n");
+		printf("  setle al\n");
+		printf("  movzb rax, al\n");
+		break;
+	case '>':
+		printf("  cmp rdi, rax\n");
+		printf("  setl al\n");
+		printf("  movzb rax, al\n");
+		break;
+	case TK_GE:
+		printf("  cmp rdi, rax\n");
+		printf("  setle al\n");
+		printf("  movzb rax, al\n");
+		break;
 	case '+':
 		printf("  add rax, rdi\n");
 		break;
@@ -190,7 +261,7 @@ int main(int argc, char **argv) {
 	}
 
 	tokenize(argv[1]);
-	Node *node = add();
+	Node *node = relational();
 
 	printf(".intel_syntax noprefix\n");
 	printf(".global main\n");
