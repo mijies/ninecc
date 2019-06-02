@@ -74,6 +74,15 @@ Node *expr() {
 
 Node *equality() {
 	Node *node = relational();
+
+	for (;;) {
+		if (consume(TK_EQ))
+			node = new_node(TK_EQ, node, relational());
+		else if (consume(TK_NE))
+			node = new_node(TK_NE, node, relational());
+		else
+			return node;
+	}
 }
 
 Node *relational() {
@@ -159,6 +168,24 @@ void tokenize(char *p) {
 			continue;
 		}
 
+		if (strncmp(p, "==", 2)==0) {
+			tokens[i].ty = TK_EQ;
+			tokens[i].input = "==";
+			i++;
+			p++;
+			p++;
+			continue;
+		}
+
+		if (strncmp(p, "!=", 2)==0) {
+			tokens[i].ty = TK_NE;
+			tokens[i].input = "!=";
+			i++;
+			p++;
+			p++;
+			continue;
+		}
+
 		if (strncmp(p, "<=", 2)==0) {
 			tokens[i].ty = TK_LE;
 			tokens[i].input = "<=";
@@ -217,6 +244,16 @@ void gen(Node *node) {
 	printf("  pop rax\n"); // Value is set by lhs
 
 	switch (node->ty) {
+	case TK_EQ:
+		printf("  cmp rax, rdi\n");
+		printf("  sete al\n");
+		printf("  movzb rax, al\n");
+		break;
+    case TK_NE:
+		printf("  cmp rax, rdi\n");
+		printf("  setne al\n");
+		printf("  movzb rax, al\n");
+		break;
 	case '<':
 		printf("  cmp rax, rdi\n");
 		printf("  setl al\n");
@@ -261,7 +298,7 @@ int main(int argc, char **argv) {
 	}
 
 	tokenize(argv[1]);
-	Node *node = relational();
+	Node *node = equality();
 
 	printf(".intel_syntax noprefix\n");
 	printf(".global main\n");
