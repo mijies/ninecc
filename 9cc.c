@@ -67,9 +67,7 @@ int consume(int ty) {
 }
 
 Node *expr() {
-	Node *node = equality();
-
-
+	return equality();
 }
 
 Node *equality() {
@@ -298,7 +296,7 @@ int main(int argc, char **argv) {
 	}
 
 	tokenize(argv[1]);
-	Node *node = equality();
+	Node *node = expr();
 
 	printf(".intel_syntax noprefix\n");
 	printf(".global main\n");
